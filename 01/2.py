@@ -13,5 +13,7 @@ for line in lines:
         elves[-1].append(int(line.strip()))
 
 sums = map(sum, elves)
+sums = list(sums)
+sums.sort(reverse=True)
 
-print(max(sums))
+print(sum(sums[:3]))
