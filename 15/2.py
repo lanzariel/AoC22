@@ -1,5 +1,6 @@
 import sys
 import heapq
+import tqdm
 
 path = sys.argv[1]
 with open(path, 'r') as f:
@@ -8,24 +9,24 @@ with open(path, 'r') as f:
 sb = []
 
 
-# BIGN = 4000000
-BIGN = 20
+BIGN = 4000000
+# BIGN = 20
 for l in lines:
     l = l.strip()[12:]
     raw_split = l.split(": closest beacon is at x=")
-    real_split = [[max(0,min(int(i),BIGN)) for i in j.split(', y=')] for j in raw_split]
+    real_split = [[int(i) for i in j.split(', y=')] for j in raw_split]
     sb.append(real_split)
-
-def get_occupied(n):
+# print(sb)
+def get_occupied(n, my_sb):
     limits = []
-    for s, b in sb:
+    for s, b in my_sb:
         distance = abs(s[0]-b[0]) + abs(s[1]-b[1])
         delta = distance - abs(s[1]-n)
         if delta>=0:
             cur_left = s[0] - delta
             cur_right = s[0] + delta
-            heapq.heappush(limits, (cur_left, -1))
-            heapq.heappush(limits, (cur_right, 1))
+            heapq.heappush(limits, (max(0,min(cur_left, BIGN)), -1))
+            heapq.heappush(limits, (max(0,min(cur_right, BIGN)), 1))
 
     ans = 0
     cur_pos = -float('inf')
@@ -45,11 +46,29 @@ def get_occupied(n):
             cur_val = 1
     return ans
 
-ans = 0
-for i in range(BIGN+1):
-    if get_occupied(i)!=BIGN+1:
-        ans += i
-print(ans)
+ans_y = 0
+for i in tqdm.tqdm(range(BIGN+1)):
+    if get_occupied(i, sb)!=BIGN+1:
+        print(i, get_occupied(i, sb))
+        ans_y += i
 
 
-            
+
+print(ans_y)
+
+
+sb_trans = []
+for a,b in sb:
+    new_a = (a[1], a[0])
+    new_b = (b[1], b[0])
+    sb_trans.append([new_a, new_b])
+
+
+ans_x = 0
+for i in tqdm.tqdm(range(BIGN+1)):
+    if get_occupied(i, sb_trans)!=BIGN+1:
+        print(i, get_occupied(i, sb_trans))
+        ans_x += i
+
+
+print(4000000*ans_x + ans_y)
