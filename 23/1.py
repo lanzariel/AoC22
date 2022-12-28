@@ -1,0 +1,87 @@
+import sys
+
+path = sys.argv[1]
+with open(path, 'r') as f:
+    lines = f.readlines()
+
+class Elf:
+    def __init__(self, x, y, wrld):
+        self.pos = (x,y)
+        self.directions = [(0,1), (0,-1), (-1,0), (1,0)]
+        self.neighbors = [((1,1), (0,1), (-1,1)), ((1,-1), (0,-1), (-1,-1)), ((-1,1), (-1,0),(-1,-1)), ((1,1),(1,0),(1,-1))]
+        self.world = wrld
+    
+    def suggest_move(self):
+        has_neighbor = [any([(self.pos[0]+el[0],self.pos[1]+el[1]) in self.world.pos for el in n_set]) for n_set in self.neighbors]
+        self.proposed_pos = self.pos
+        if any(has_neighbor):
+            for it, must_be_free in enumerate(has_neighbor):
+                if not must_be_free:
+                    self.proposed_pos = (self.pos[0]+self.directions[it][0], self.pos[1]+self.directions[it][1])
+                    break
+        return self.proposed_pos
+
+    def move(self):
+        if self.pos!= self.proposed_pos:
+            self.pos = self.proposed_pos
+            return True
+        return False
+
+    def shift(self):
+        self.directions = self.directions[1:] + [self.directions[0]]
+        self.neighbors = self.neighbors[1:] + [self.neighbors[0]]
+
+
+class World:
+    def __init__(self, lns):
+        self.elves = []
+        for row, actual_row in enumerate(lns):
+            for col, value in enumerate(actual_row.strip()):
+                if value=='#':
+                    self.elves.append(Elf(col, -row, self))
+        self.make_pos()
+
+    def make_pos(self):
+        self.pos = set()
+        for e in self.elves:
+            self.pos.add(e.pos)
+
+    def move(self):
+        suggested_pos = {}
+        for e in self.elves:
+            s_p = e.suggest_move()
+            if s_p in suggested_pos:
+                suggested_pos[s_p].proposed_pos = suggested_pos[s_p].pos
+                e.proposed_pos = e.pos
+            else:
+                suggested_pos[s_p] = e
+        moved = False
+        for e in self.elves:
+            cur_moved = e.move()
+            moved = moved or cur_moved
+            e.shift()
+        self.make_pos()
+        return moved
+
+    def print(self):
+        xs = [e.pos[0] for e in self.elves]
+        ys = [e.pos[1] for e in self.elves]
+        x_len = max(xs)-min(xs)+1
+        y_len = max(ys)-min(ys)+1
+        ans = [['.' for i in range(x_len)]for j in range(y_len)]
+        for e in self.elves:
+            x,y = e.pos
+            ans[y-min(ys)][x-min(xs)] = '#'
+        for row in ans[::-1]:
+            print("".join(row))
+
+
+    def get_size(self):
+        xs = [e.pos[0] for e in self.elves]
+        ys = [e.pos[1] for e in self.elves]
+        return (max(xs)-min(xs)+1) * (max(ys)-min(ys)+1) - len(self.elves)
+    
+w= World(lines)
+for i in range(10):
+    w.move()
+print(w.get_size())
